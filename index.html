@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            color: #007bff;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .column h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .column a {
+            text-decoration: none;
+        }
+
+        .column button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .column button:hover {
+            background-color: #0056b3;
+        }
+
+        .admin-button {
+            background-color: #dc3545;
+        }
+
+        .admin-button:hover {
+            background-color: #bd2130;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Navigation</h1>
+
+    <div class="container">
+        <!-- Booking Actions -->
+        <div class="column">
+            <h2>Booking Actions</h2>
+            <a href="booking.php">
+                <button>Make Booking</button>
+            </a>
+            <a href="view_bookings.php">
+                <button>View Bookings</button>
+            </a>
+            <a href="update_booking.php">
+                <button>Update/Cancel Bookings</button>
+            </a>
+        </div>
+
+        <!-- Passenger Actions -->
+        <div class="column">
+            <h2>Passenger Actions</h2>
+            <a href="update_passenger.php">
+                <button>Update/Delete Passenger</button>
+            </a>
+            <a href="login.php">
+                <button>Login</button>
+            </a>
+            <a href="signup.php">
+                <button>Sign Up</button>
+            </a>
+        </div>
+
+        <!-- Admin Actions -->
+        <div class="column">
+            <h2>Admin Actions</h2>
+            <a href="add_flight.php">
+                <button class="admin-button">Add Flight</button>
+            </a>
+            <a href="update_flights.php">
+                <button class="admin-button">Update Flight</button>
+            </a>
+        </div>
+    </div>
+
+
+</body>
+
+</html>
