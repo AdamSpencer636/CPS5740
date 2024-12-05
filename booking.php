@@ -10,7 +10,7 @@ if (!isset($_SESSION['passenger_id'])) {
 
 // Fetch airports from the database
 $airports = [];
-$result = $conn->query("SELECT airport_id, city FROM 2024F_spencead.Airport");
+$result = $conn->query("SELECT airport_id, city FROM 2024F_ortegjoh.Airport");
 
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -38,9 +38,9 @@ if ($step === 1 && $_SERVER['REQUEST_METHOD'] === 'POST') {
         // Fetch matching flights
         $stmt = $conn->prepare("
             SELECT f.flight_number, f.flight_duration, f.layover_time, f.number_of_stops, f.total_price
-            FROM 2024F_spencead.Flight f
-            JOIN 2024F_spencead.DepartsArrives da1 ON f.flight_number = da1.flight_number AND da1.is_departure = 1
-            JOIN 2024F_spencead.DepartsArrives da2 ON f.flight_number = da2.flight_number AND da2.is_departure = 0
+            FROM 2024F_allaican.Flight f
+            JOIN 2024F_allaican.DepartsArrives da1 ON f.flight_number = da1.flight_number AND da1.is_departure = 1
+            JOIN 2024F_allaican.DepartsArrives da2 ON f.flight_number = da2.flight_number AND da2.is_departure = 0
             WHERE da1.airport_id = ? AND da2.airport_id = ?
         ");
         $stmt->bind_param("ii", $departure_city, $arrival_city);
@@ -82,7 +82,7 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step']
         $error = "Number of passengers must be at least 1.";
     } else {
         // Fetch the flight price
-        $stmt = $conn->prepare("SELECT total_price FROM 2024F_spencead.Flight WHERE flight_number = ?");
+        $stmt = $conn->prepare("SELECT total_price FROM 2024F_allaican.Flight WHERE flight_number = ?");
         $stmt->bind_param("s", $flight_number);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -120,7 +120,7 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step']
                 $stmt->close();
 
                 // Insert into Book table
-                $stmt = $conn->prepare("INSERT INTO 2024F_spencead.Book (passenger_id, booking_id) VALUES (?, ?)");
+                $stmt = $conn->prepare("INSERT INTO 2024F_ortegjoh.Book (passenger_id, booking_id) VALUES (?, ?)");
                 $stmt->bind_param("ii", $passenger_id, $booking_id);
                 $stmt->execute();
                 $stmt->close();
@@ -142,10 +142,6 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step']
         }
     }
 }
-
-
-
-
 
 $conn->close();
 ?>

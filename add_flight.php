@@ -17,7 +17,7 @@ function generateUniqueFlightNumber($conn) {
         $flight_number = str_pad(rand(1, 999), 3, "0", STR_PAD_LEFT);
 
         // Check if the flight number already exists in the database
-        $stmt = $conn->prepare("SELECT COUNT(*) AS count FROM 2024F_spencead.Flight WHERE flight_number = ?");
+        $stmt = $conn->prepare("SELECT COUNT(*) AS count FROM 2024F_allaican.Flight WHERE flight_number = ?");
         $stmt->bind_param("s", $flight_number);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -32,7 +32,7 @@ function generateUniqueFlightNumber($conn) {
 
 // Fetch airports for the dropdowns
 $airports = [];
-$result = $conn->query("SELECT airport_id, city FROM 2024F_spencead.Airport");
+$result = $conn->query("SELECT airport_id, city FROM 2024F_ortegjoh.Airport");
 
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             // Insert into Flight table
             $stmt = $conn->prepare("
-                INSERT INTO 2024F_spencead.Flight (flight_number, total_price, flight_duration, number_of_stops, layover_time) 
+                INSERT INTO 2024F_allaican.Flight (flight_number, total_price, flight_duration, number_of_stops, layover_time) 
                 VALUES (?, ?, ?, ?, ?)
             ");
             $stmt->bind_param("sdiii", $flight_number, $base_price, $flight_time, $number_of_stops, $layover_time);
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Insert into DepartsArrives table for departure
             $stmt = $conn->prepare("
-                INSERT INTO 2024F_spencead.DepartsArrives (flight_number, airport_id, is_departure) 
+                INSERT INTO 2024F_allaican.DepartsArrives (flight_number, airport_id, is_departure) 
                 VALUES (?, ?, 1)
             ");
             $stmt->bind_param("si", $flight_number, $departure_airport);
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Insert into DepartsArrives table for arrival
             $stmt = $conn->prepare("
-                INSERT INTO 2024F_spencead.DepartsArrives (flight_number, airport_id, is_departure) 
+                INSERT INTO 2024F_allaican.DepartsArrives (flight_number, airport_id, is_departure) 
                 VALUES (?, ?, 0)
             ");
             $stmt->bind_param("si", $flight_number, $arrival_airport);

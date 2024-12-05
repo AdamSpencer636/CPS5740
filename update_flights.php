@@ -15,7 +15,7 @@ $message = "";
 $flights = [];
 $stmt = $conn->prepare("
     SELECT flight_number, total_price, number_of_stops
-    FROM 2024F_spencead.Flight
+    FROM 2024F_allaican.Flight
 ");
 $stmt->execute();
 $result = $stmt->get_result();
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Update the flight details
         $stmt = $conn->prepare("
-            UPDATE 2024F_spencead.Flight
+            UPDATE 2024F_allaican.Flight
             SET total_price = ?, number_of_stops = ?
             WHERE flight_number = ?
         ");

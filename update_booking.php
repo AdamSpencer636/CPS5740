@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Update the booking
         $stmt = $conn->prepare("
             UPDATE 2024F_spencead.Booking b
-            JOIN 2024F_spencead.Book bk ON b.booking_id = bk.booking_id
+            JOIN 2024F_ortegjoh.Book bk ON b.booking_id = bk.booking_id
             SET b.number_of_passengers = ?, b.class_of_service = ?, b.num_of_bags = ?
             WHERE b.booking_id = ? AND bk.passenger_id = ?
         ");
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Mark the booking as canceled
         $stmt = $conn->prepare("
             UPDATE 2024F_spencead.Booking b
-            JOIN 2024F_spencead.Book bk ON b.booking_id = bk.booking_id
+            JOIN 2024F_ortegjoh.Book bk ON b.booking_id = bk.booking_id
             SET b.canceled = 1
             WHERE b.booking_id = ? AND bk.passenger_id = ?
         ");
@@ -70,7 +70,7 @@ $bookings = [];
 $stmt = $conn->prepare("
     SELECT b.booking_id, b.booking_date, b.total_cost, b.number_of_passengers, b.num_of_bags, b.class_of_service, b.canceled
     FROM 2024F_spencead.Booking b
-    JOIN 2024F_spencead.Book bk ON b.booking_id = bk.booking_id
+    JOIN 2024F_ortegjoh.Book bk ON b.booking_id = bk.booking_id
     WHERE bk.passenger_id = ?
 ");
 $stmt->bind_param("i", $passenger_id);
