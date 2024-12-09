@@ -10,7 +10,7 @@ if (!isset($_SESSION['passenger_id'])) {
 
 // Fetch airports from the database
 $airports = [];
-$result = $conn->query("SELECT airport_id, city FROM 2024F_ortegjoh.Airport");
+$result = $conn->query("SELECT airport_id, city FROM 2024F_spencead.Airport");
 
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -26,21 +26,22 @@ $error = "";
 $message = "";
 
 // Step 1: Search Flights
-if ($step === 1 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($step === 1 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['find_flights'])) {
     $departure_city = $_POST['departure_city'] ?? null;
     $arrival_city = $_POST['arrival_city'] ?? null;
+    $booking_date = $_POST['booking_date'] ?? null;
 
-    if (!$departure_city || !$arrival_city) {
-        $error = "Both departure and arrival cities are required.";
+    if (!$departure_city || !$arrival_city || !$booking_date) {
+        $error = "Departure city, arrival city, and booking date are required.";
     } elseif ($departure_city === $arrival_city) {
         $error = "Departure and arrival cities cannot be the same.";
     } else {
         // Fetch matching flights
         $stmt = $conn->prepare("
             SELECT f.flight_number, f.flight_duration, f.layover_time, f.number_of_stops, f.total_price
-            FROM 2024F_allaican.Flight f
-            JOIN 2024F_allaican.DepartsArrives da1 ON f.flight_number = da1.flight_number AND da1.is_departure = 1
-            JOIN 2024F_allaican.DepartsArrives da2 ON f.flight_number = da2.flight_number AND da2.is_departure = 0
+            FROM 2024F_spencead.Flight f
+            JOIN 2024F_spencead.DepartsArrives da1 ON f.flight_number = da1.flight_number AND da1.is_departure = 1
+            JOIN 2024F_spencead.DepartsArrives da2 ON f.flight_number = da2.flight_number AND da2.is_departure = 0
             WHERE da1.airport_id = ? AND da2.airport_id = ?
         ");
         $stmt->bind_param("ii", $departure_city, $arrival_city);
@@ -51,38 +52,41 @@ if ($step === 1 && $_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($flights)) {
             $error = "No flights found for the selected criteria.";
         } else {
+            $_SESSION['booking_date'] = $booking_date; // Store booking date in session
+            $_SESSION['departure_city'] = $departure_city;
+            $_SESSION['arrival_city'] = $arrival_city;
+            $_SESSION['flights'] = $flights; // Store flight options in session
             $step = 2; // Move to Step 2
         }
     }
 }
 
 // Step 2: Select Flight
-if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step']) && $_POST['step'] == 2) {
+if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['select_flight'])) {
     $selected_flight = $_POST['flight_number'] ?? null;
 
     if (!$selected_flight) {
         $error = "Please select a flight.";
     } else {
         $_SESSION['selected_flight'] = $selected_flight; // Store selected flight in session
-        $step = 3; // Move to Step 3 for final details
+        $step = 3; // Move to Step 3
     }
 }
 
 // Step 3: Complete Booking
-if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step']) && $_POST['step'] == 3) {
+if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_booking'])) {
     $flight_number = $_SESSION['selected_flight'] ?? null;
+    $booking_date = $_SESSION['booking_date'] ?? null; // Retrieve booking date from session
     $ktn = $_POST['ktn'] ?? null; // Optional
     $number_of_bags = $_POST['number_of_bags'] ?? 0;
-    $number_of_passengers = $_POST['number_of_passengers'] ?? 1; // Default to 1 passenger if not set
+    $number_of_passengers = $_POST['number_of_passengers'] ?? 1;
     $class_of_service = $_POST['class_of_service'] ?? 'Economy';
 
-    if (!$flight_number) {
-        $error = "Flight selection is required.";
-    } elseif ($number_of_passengers <= 0) {
-        $error = "Number of passengers must be at least 1.";
+    if (!$flight_number || !$booking_date) {
+        $error = "Flight selection and booking date are required.";
     } else {
         // Fetch the flight price
-        $stmt = $conn->prepare("SELECT total_price FROM 2024F_allaican.Flight WHERE flight_number = ?");
+        $stmt = $conn->prepare("SELECT total_price FROM 2024F_spencead.Flight WHERE flight_number = ?");
         $stmt->bind_param("s", $flight_number);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -92,18 +96,8 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step']
         if (!$flight) {
             $error = "Selected flight not found.";
         } else {
-            // Adjust price based on class of service
             $flight_price = $flight['total_price'];
-            $class_multiplier = [
-                'Economy' => 1.0,
-                'Premium Economy' => 1.5,
-                'Business' => 2.0,
-                'First Class' => 3.0
-            ];
-            $price_multiplier = $class_multiplier[$class_of_service] ?? 1.0;
-
-            $adjusted_price = $flight_price * $price_multiplier;
-            $total_cost = ($adjusted_price + ($number_of_bags * 25)) * $number_of_passengers;
+            $total_cost = ($flight_price + ($number_of_bags * 25)) * $number_of_passengers; // Total cost calculation
 
             // Insert booking into the database
             $conn->begin_transaction();
@@ -112,15 +106,15 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step']
                 // Insert into Booking table
                 $stmt = $conn->prepare("
                     INSERT INTO 2024F_spencead.Booking (booking_date, total_cost, number_of_passengers, class_of_service, num_of_bags) 
-                    VALUES (NOW(), ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?)
                 ");
-                $stmt->bind_param("disi", $total_cost, $number_of_passengers, $class_of_service, $number_of_bags);
+                $stmt->bind_param("sdiss", $booking_date, $total_cost, $number_of_passengers, $class_of_service, $number_of_bags);
                 $stmt->execute();
                 $booking_id = $stmt->insert_id;
                 $stmt->close();
 
                 // Insert into Book table
-                $stmt = $conn->prepare("INSERT INTO 2024F_ortegjoh.Book (passenger_id, booking_id) VALUES (?, ?)");
+                $stmt = $conn->prepare("INSERT INTO 2024F_spencead.Book (passenger_id, booking_id) VALUES (?, ?)");
                 $stmt->bind_param("ii", $passenger_id, $booking_id);
                 $stmt->execute();
                 $stmt->close();
@@ -133,7 +127,7 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['step']
 
                 $conn->commit();
                 $message = "Booking completed successfully! Total Cost: $" . number_format($total_cost, 2);
-                unset($_SESSION['selected_flight']); // Clear the session variable
+                unset($_SESSION['selected_flight'], $_SESSION['booking_date']); // Clear session variables
                 $step = 1; // Reset for new booking
             } catch (Exception $e) {
                 $conn->rollback();
@@ -240,10 +234,7 @@ $conn->close();
 </head>
 
 <body>
-    <div class="home-button-container">
-    <a href="index.html" class="btn btn-home">Home</a>
-</div>
-
+    <a href="index.html" class="btn">Home</a>
     <h1>Create a New Booking</h1>
 
     <?php if ($error): ?>
@@ -258,8 +249,8 @@ $conn->close();
         <!-- Step 1: Search Flights -->
         <form method="POST">
             <input type="hidden" name="step" value="1">
-
-            <div class="form-group">
+            <input type="hidden" name="find_flights" value="1">
+             <div class="form-group">
                 <label for="departure_city">From:</label>
                 <select id="departure_city" name="departure_city" required>
                     <option value="">Select a departure city</option>
@@ -283,13 +274,17 @@ $conn->close();
                 </select>
             </div>
 
+            <div class="form-group">
+                <label for="booking_date">Booking Date:</label>
+                <input type="date" id="booking_date" name="booking_date" required>
+            </div>
             <button type="submit" class="btn btn-primary">Find Flights</button>
         </form>
     <?php elseif ($step === 2): ?>
         <!-- Step 2: Select Flight -->
         <form method="POST">
             <input type="hidden" name="step" value="2">
-
+            <input type="hidden" name="select_flight" value="1">
             <?php foreach ($flights as $flight): ?>
                 <div class="flight-card">
                     <input type="radio" name="flight_number" value="<?php echo htmlspecialchars($flight['flight_number']); ?>" required>
@@ -300,41 +295,30 @@ $conn->close();
                     <strong>Price:</strong> $<?php echo htmlspecialchars($flight['total_price']); ?>
                 </div>
             <?php endforeach; ?>
-
-            <button type="submit" class="btn btn-primary">Continue</button>
+            <button type="submit"class="btn btn-primary">Continue</button>
         </form>
     <?php elseif ($step === 3): ?>
-    <!-- Step 3: Additional Details -->
-    <form method="POST">
-        <input type="hidden" name="step" value="3">
-
-        <div class="form-group">
-            <label for="ktn">Known Traveler Number (KTN):</label>
-            <input type="text" id="ktn" name="ktn">
-        </div>
-
-        <div class="form-group">
-            <label for="number_of_bags">Number of Bags:</label>
-            <input type="number" id="number_of_bags" name="number_of_bags" min="0" value="0" required>
-        </div>
-
-        <div class="form-group">
-            <label for="number_of_passengers">Number of Passengers:</label>
-            <input type="number" id="number_of_passengers" name="number_of_passengers" min="1" value="1" required>
-        </div>
-
-        <div class="form-group">
+        <!-- Step 3: Additional Details -->
+        <form method="POST">
+            <input type="hidden" name="step" value="3">
+            <input type="hidden" name="complete_booking" value="1">
+            <div class="form-group">
+           <label for="number_of_passengers">Number of Passengers:</label>
+            <input type="number" id="number_of_passengers" name="number_of_passengers" min="1" required><br><br>
             <label for="class_of_service">Class of Service:</label>
             <select id="class_of_service" name="class_of_service" required>
                 <option value="Economy">Economy</option>
                 <option value="Premium Economy">Premium Economy</option>
                 <option value="Business">Business</option>
                 <option value="First Class">First Class</option>
-            </select>
+            </select><br><br>
+            <label for="ktn">Known Traveler Number (KTN):</label>
+            <input type="text" id="ktn" name="ktn"><br><br>
+            <label for="number_of_bags">Number of Bags:</label>
+            <input type="number" id="number_of_bags" name="number_of_bags" min="0" required default="0" ><br><br>
         </div>
-
-        <button type="submit" class="btn btn-primary">Complete Booking</button>
-    </form>
+            <button type="submit" class="btn btn-primary">Complete Booking</button>
+        </form>
     <?php endif; ?>
 </body>
 

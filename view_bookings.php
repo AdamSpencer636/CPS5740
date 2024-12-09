@@ -27,7 +27,7 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        if ($row['canceled'] || strtotime($row['booking_date']) < time()) {
+        if ($row['canceled'] || strtotime($row['booking_date']) < date("l")) {
             $past_canceled_bookings[] = $row;
         } else {
             $upcoming_bookings[] = $row;
